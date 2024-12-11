@@ -5,6 +5,73 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crash Game</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .game-container {
+            text-align: center;
+            background-color: #1e1e1e;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            width: 300px;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        .game-info {
+            margin-bottom: 20px;
+        }
+
+        #multiplier {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .controls input {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: none;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        .controls button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #start-btn {
+            background-color: #4caf50;
+            color: white;
+        }
+
+        #cashout-btn {
+            background-color: #f44336;
+            color: white;
+        }
+
+        #cashout-btn:disabled {
+            background-color: gray;
+            cursor: not-allowed;
+        }
+    </style>
 </head>
 <body>
     <div class="game-container">
@@ -19,7 +86,61 @@
             <button id="cashout-btn" disabled>Cash Out</button>
         </div>
     </div>
-    <script src="script.js"></script>
+    <script>
+        const multiplierEl = document.getElementById('multiplier');
+        const statusEl = document.getElementById('status');
+        const betInput = document.getElementById('bet');
+        const startBtn = document.getElementById('start-btn');
+        const cashoutBtn = document.getElementById('cashout-btn');
+
+        let multiplier = 1.0;
+        let crashPoint = 0;
+        let gameInterval = null;
+        let gameStarted = false;
+
+        startBtn.addEventListener('click', () => {
+            if (gameStarted) return;
+
+            const bet = parseFloat(betInput.value);
+            if (!bet || bet <= 0) {
+                statusEl.textContent = 'Invalid bet amount!';
+                return;
+            }
+
+            crashPoint = (Math.random() * 10 + 1).toFixed(2); // Random crash between 1 and 10
+            multiplier = 1.0;
+            statusEl.textContent = 'Game started!';
+            gameStarted = true;
+            betInput.disabled = true;
+            startBtn.disabled = true;
+            cashoutBtn.disabled = false;
+
+            gameInterval = setInterval(() => {
+                multiplier += 0.1;
+                multiplierEl.textContent = multiplier.toFixed(2) + 'x';
+
+                if (multiplier >= crashPoint) {
+                    clearInterval(gameInterval);
+                    statusEl.textContent = 'Crashed at ' + crashPoint + 'x!';
+                    resetGame();
+                }
+            }, 100);
+        });
+
+        cashoutBtn.addEventListener('click', () => {
+            if (!gameStarted) return;
+
+            clearInterval(gameInterval);
+            statusEl.textContent = 'You cashed out at ' + multiplier.toFixed(2) + 'x!';
+            resetGame();
+        });
+
+        function resetGame() {
+            gameStarted = false;
+            betInput.disabled = false;
+            startBtn.disabled = false;
+            cashoutBtn.disabled = true;
+        }
+    </script>
 </body>
 </html>
-
