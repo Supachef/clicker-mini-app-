@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Flappy Bird</title>
+    <title>Flappy Bird for Telegram</title>
     <style>
         body {
             margin: 0;
@@ -11,53 +11,42 @@
             justify-content: center;
             align-items: center;
             flex-direction: column;
-            height: 100vh;
             background-color: #70c5ce;
+            overflow: hidden;
             font-family: Arial, sans-serif;
         }
         canvas {
-            display: none;
             border: 2px solid #000;
         }
-        #startButton, #leaderboardButton {
+        #startButton {
             padding: 10px 20px;
             background-color: #ffcc00;
             border: none;
             border-radius: 5px;
             font-size: 18px;
             cursor: pointer;
-            margin: 5px;
         }
-        #startButton:hover, #leaderboardButton:hover {
+        #startButton:hover {
             background-color: #ffaa00;
-        }
-        #leaderboard {
-            display: none;
-            background-color: #fff;
-            border: 2px solid #000;
-            padding: 10px;
-            text-align: center;
-            border-radius: 5px;
         }
     </style>
 </head>
 <body>
     <button id="startButton">Start Game</button>
-    <button id="leaderboardButton">View Leaderboard</button>
-    <canvas id="gameCanvas" width="320" height="480"></canvas>
-    <div id="leaderboard">
-        <h2>Leaderboard</h2>
-        <ul id="leaderboardList"></ul>
-        <button id="closeLeaderboard">Close</button>
-    </div>
+    <canvas id="gameCanvas" width="320" height="480" style="display: none;"></canvas>
+
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const startButton = document.getElementById('startButton');
-        const leaderboardButton = document.getElementById('leaderboardButton');
-        const leaderboard = document.getElementById('leaderboard');
-        const leaderboardList = document.getElementById('leaderboardList');
-        const closeLeaderboard = document.getElementById('closeLeaderboard');
+
+        const birdImg = new Image();
+        const bgImg = new Image();
+        const pipeImg = new Image();
+
+        birdImg.src = './assets/bird.png';
+        bgImg.src = './assets/background.png';
+        pipeImg.src = './assets/pipe.png';
 
         const bird = {
             x: 50,
@@ -74,30 +63,14 @@
         const pipeGap = 120;
         let pipeSpeed = 2;
         let score = 0;
-        let highScores = JSON.parse(localStorage.getItem('highScores')) || [];
+        let animationFrame;
 
         function drawBird() {
-            ctx.fillStyle = 'yellow';
-            ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
+            ctx.drawImage(birdImg, bird.x, bird.y, bird.width, bird.height);
         }
 
-        function updateBird() {
-            bird.velocity += bird.gravity;
-            bird.y += bird.velocity;
-
-            if (bird.y + bird.height > canvas.height) {
-                bird.y = canvas.height - bird.height;
-                bird.velocity = 0;
-            }
-
-            if (bird.y < 0) {
-                bird.y = 0;
-                bird.velocity = 0;
-            }
-        }
-
-        function jump() {
-            bird.velocity = bird.lift;
+        function drawBackground() {
+            ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
         }
 
         function createPipe() {
@@ -116,10 +89,6 @@
                 if (pipes[i].x + pipeWidth < 0) {
                     pipes.splice(i, 1);
                     score++;
-
-                    if (score % 5 === 0) {
-                        pipeSpeed += 0.5; // Increase speed every 5 pipes
-                    }
                 }
             }
 
@@ -129,11 +98,23 @@
         }
 
         function drawPipes() {
-            ctx.fillStyle = 'green';
             for (const pipe of pipes) {
-                ctx.fillRect(pipe.x, 0, pipeWidth, pipe.top);
-                ctx.fillRect(pipe.x, pipe.bottom, pipeWidth, canvas.height - pipe.bottom);
+                ctx.drawImage(pipeImg, pipe.x, 0, pipeWidth, pipe.top);
+                ctx.drawImage(pipeImg, pipe.x, pipe.bottom, pipeWidth, canvas.height - pipe.bottom);
             }
+        }
+
+        function updateBird() {
+            bird.velocity += bird.gravity;
+            bird.y += bird.velocity;
+
+            if (bird.y + bird.height > canvas.height || bird.y < 0) {
+                endGame();
+            }
+        }
+
+        function jump() {
+            bird.velocity = bird.lift;
         }
 
         function checkCollision() {
@@ -143,59 +124,34 @@
                     bird.x + bird.width > pipe.x &&
                     (bird.y < pipe.top || bird.y + bird.height > pipe.bottom)
                 ) {
-                    return true;
+                    endGame();
                 }
             }
-            return false;
         }
 
-        function saveScore(score) {
-            highScores.push(score);
-            highScores.sort((a, b) => b - a);
-            highScores = highScores.slice(0, 5); // Keep top 5 scores
-            localStorage.setItem('highScores', JSON.stringify(highScores));
-        }
-
-        function displayLeaderboard() {
-            leaderboardList.innerHTML = '';
-            highScores.forEach((score, index) => {
-                const li = document.createElement('li');
-                li.textContent = `${index + 1}. ${score}`;
-                leaderboardList.appendChild(li);
-            });
-            leaderboard.style.display = 'block';
+        function endGame() {
+            cancelAnimationFrame(animationFrame);
+            alert(`Game Over! Your score: ${score}`);
+            document.location.reload();
         }
 
         function gameLoop() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+            drawBackground();
             drawBird();
             updateBird();
             updatePipes();
             drawPipes();
+            checkCollision();
 
-            if (checkCollision()) {
-                alert('Game Over! Your score: ' + score);
-                saveScore(score);
-                document.location.reload();
-                return;
-            }
-
-            requestAnimationFrame(gameLoop);
+            animationFrame = requestAnimationFrame(gameLoop);
         }
 
         startButton.addEventListener('click', () => {
             startButton.style.display = 'none';
-            leaderboardButton.style.display = 'none';
             canvas.style.display = 'block';
             createPipe();
             gameLoop();
-        });
-
-        leaderboardButton.addEventListener('click', displayLeaderboard);
-
-        closeLeaderboard.addEventListener('click', () => {
-            leaderboard.style.display = 'none';
         });
 
         document.addEventListener('keydown', (e) => {
