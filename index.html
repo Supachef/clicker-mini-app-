@@ -26,13 +26,59 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        // Example: Draw a placeholder background and text
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#000';
-        ctx.font = '20px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('Flappy Bird', canvas.width / 2, canvas.height / 2);
+        const bird = {
+            x: 50,
+            y: 150,
+            width: 20,
+            height: 20,
+            gravity: 1.5,
+            lift: -15,
+            velocity: 0
+        };
+
+        function drawBird() {
+            ctx.fillStyle = 'yellow';
+            ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
+        }
+
+        function updateBird() {
+            bird.velocity += bird.gravity;
+            bird.y += bird.velocity;
+
+            // Prevent bird from falling below the canvas
+            if (bird.y + bird.height > canvas.height) {
+                bird.y = canvas.height - bird.height;
+                bird.velocity = 0;
+            }
+
+            // Prevent bird from going above the canvas
+            if (bird.y < 0) {
+                bird.y = 0;
+                bird.velocity = 0;
+            }
+        }
+
+        function jump() {
+            bird.velocity = bird.lift;
+        }
+
+        // Add event listener for space key or screen click
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') jump();
+        });
+
+        canvas.addEventListener('click', jump);
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawBird();
+            updateBird();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        gameLoop();
     </script>
 </body>
 </html>
